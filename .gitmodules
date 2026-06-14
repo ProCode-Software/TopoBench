@@ -1,0 +1,3 @@
+[submodule "procosort"]
+	path = procosort
+	url = https://github.com/ProCode-Software/procosort
