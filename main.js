@@ -6,6 +6,7 @@ import { dfs } from './dfs.js'
 
 const implementations = {
     "ProCode's Algorithm": procode,
+    "ProCode's Algorithm (2)": procode2,
     "Kahn's Algorithm": kahn,
     'Depth-First Search': dfs,
 }
