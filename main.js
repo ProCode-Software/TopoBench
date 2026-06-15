@@ -2,12 +2,10 @@ import { performance } from 'perf_hooks'
 import { styleText, parseArgs } from 'util'
 import { dfs } from './dfs.js'
 import { kahn } from './kahn.js'
-import procode2 from './procode2.js'
 import procode from './procosort/index.js'
 
 const implementations = {
     "ProCode's Algorithm": procode,
-    "ProCode's Algorithm (2)": procode2,
     "Kahn's Algorithm": kahn,
     'Depth-First Search': dfs,
 }
@@ -44,7 +42,7 @@ const tests = [
     cycleInput([1, 2], [2, 3], [3, 4], [4, 5], [5, 3]),
     cycleInput([1, 1]),
     cycleInput([1, 2], [2, 1]),
-    cycleInput([1, 4], [4, 5], [5, 3], [3, 2], [7, 2], [2, 6], [6, 1]),
+    cycleInput([1, 3], [2, 3], [2, 5], [5, 3], [7, 5], [6, 7], [4, 6], [3, 4], [3, 6]),
 ]
 
 /** @type {Map<string, number>} */
@@ -66,6 +64,12 @@ for (let i = 0; i < runs; i++) {
     for (const [name, fn] of Object.entries(implementations)) {
         runImpl(name, fn)
     }
+}
+
+// Average the scores and times
+for (const name in implementations) {
+    scores.set(name, scores.get(name) / runs)
+    times.set(name, times.get(name) / runs)
 }
 
 printScores()
@@ -157,7 +161,7 @@ function printScores() {
         Object.keys(implementations).reduce(
             (a, { length }) => (a > length ? a : length),
             0
-        ) + 5
+        ) + 2
 
     // Header
     console.log(
@@ -175,7 +179,7 @@ function printScores() {
             styleText('bold', `${name.padEnd(longestName)}`),
             '|',
             styleText(
-                (score /= runs) == BEST
+                score == BEST
                     ? 'greenBright'
                     : score > BEST / 2
                       ? 'yellowBright'
@@ -183,7 +187,7 @@ function printScores() {
                 `${score}`.padStart(5)
             ),
             '|',
-            styleText('greenBright', `${(times.get(name) / runs).toPrecision(8)} ms`),
+            styleText('greenBright', `${times.get(name).toPrecision(8)} ms`),
         ]
         if (i % 2 === 1) row = row.map(cell => styleText('dim', cell))
         console.log(...row)
@@ -200,14 +204,14 @@ function printScores() {
         styleText(['magentaBright', 'bold'], 'Best performance:'),
         styleText('blueBright', fastestAlg),
         'at',
-        styleText('blueBright', `${(fastestTime / runs).toPrecision(3)} ms`)
+        styleText('blueBright', `${fastestTime.toPrecision(3)} ms`)
     )
     console.log(
         '🐌',
         styleText(['bold'], 'Worst performance:'),
         styleText('redBright', slowestAlg),
         'at',
-        styleText('redBright', `${(slowestTime / runs).toPrecision(3)} ms`)
+        styleText('redBright', `${slowestTime.toPrecision(3)} ms`)
     )
     console.groupEnd()
 }
