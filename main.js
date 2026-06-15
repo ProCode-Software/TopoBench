@@ -1,8 +1,9 @@
 import { performance } from 'perf_hooks'
-import { styleText } from 'util'
-import { kahn } from './kahn.js'
-import procode from './procosort/index.js'
+import { styleText, parseArgs } from 'util'
 import { dfs } from './dfs.js'
+import { kahn } from './kahn.js'
+import procode2 from './procode2.js'
+import procode from './procosort/index.js'
 
 const implementations = {
     "ProCode's Algorithm": procode,
@@ -16,13 +17,17 @@ const implementations = {
  * @typedef {string | number[]} Result */
 
 /**
- * @param {number[][]} x
- * @returns {number[][]}
+ * @param {[number, number][]} x
  */
 const input = (...x) => x
 
+/**
+ * @param {[number, number][]} x
+ * @returns {(typeof x) & {cycle?: true}}
+ */
 const cycleInput = (...x) => ((x.cycle = true), x)
 
+/** @type {([number, number][] & {cycle?: true})[]} */
 const tests = [
     input([3, 0], [1, 0], [2, 0]),
     input([1, 3], [2, 3], [4, 1], [4, 0], [5, 0], [5, 2]),
@@ -37,6 +42,9 @@ const tests = [
     cycleInput([1, 2], [2, 1]),
     cycleInput([1, 2], [2, 3], [3, 4], [4, 2]),
     cycleInput([1, 2], [2, 3], [3, 4], [4, 5], [5, 3]),
+    cycleInput([1, 1]),
+    cycleInput([1, 2], [2, 1]),
+    cycleInput([1, 4], [4, 5], [5, 3], [3, 2], [7, 2], [2, 6], [6, 1]),
 ]
 
 /** @type {Map<string, number>} */
@@ -45,13 +53,27 @@ const scores = new Map()
 /** @type {Map<string, number>} */
 const times = new Map()
 
+const parsedFlags = parseArgs({
+    strict: true,
+    options: { runs: { type: 'string', short: 'r', default: '1' } },
+})
+
+let runs = +parsedFlags.values.runs || 1
+if (isNaN(runs) || runs <= 0) runs = 1
+
 // Run each implementation
-for (const [name, fn] of Object.entries(implementations)) {
-    runImpl(name, fn)
+for (let i = 0; i < runs; i++) {
+    for (const [name, fn] of Object.entries(implementations)) {
+        runImpl(name, fn)
+    }
 }
 
 printScores()
 
+/**
+ * @param {string} name
+ * @param {(input: typeof tests[number]) => Result} fn
+ */
 function runImpl(name, fn) {
     for (const [i, testInput] of tests.entries()) {
         const start = performance.now()
@@ -125,6 +147,10 @@ function printScores() {
 
     const BEST = tests.length
     console.log(
+        styleText('cyan', `Runs: ${styleText('blueBright', `${runs}`)}`),
+        runs > 1 ? styleText('dim', '(showing averages)') : ''
+    )
+    console.log(
         styleText('magenta', `Max points: ${styleText('blueBright', `${BEST}`)}\n`)
     )
     const longestName =
@@ -144,12 +170,12 @@ function printScores() {
 
     // Table
     const sortedEntries = [...scores.entries()].sort(([, a], [, b]) => b - a)
-    for (const [i, [name, score]] of sortedEntries.entries()) {
+    for (let [i, [name, score]] of sortedEntries.entries()) {
         let row = [
             styleText('bold', `${name.padEnd(longestName)}`),
             '|',
             styleText(
-                score == BEST
+                (score /= runs) == BEST
                     ? 'greenBright'
                     : score > BEST / 2
                       ? 'yellowBright'
@@ -157,7 +183,7 @@ function printScores() {
                 `${score}`.padStart(5)
             ),
             '|',
-            styleText('greenBright', `${times.get(name).toPrecision(8)} ms`),
+            styleText('greenBright', `${(times.get(name) / runs).toPrecision(8)} ms`),
         ]
         if (i % 2 === 1) row = row.map(cell => styleText('dim', cell))
         console.log(...row)
@@ -174,14 +200,14 @@ function printScores() {
         styleText(['magentaBright', 'bold'], 'Best performance:'),
         styleText('blueBright', fastestAlg),
         'at',
-        styleText('blueBright', `${fastestTime.toPrecision(3)} ms`)
+        styleText('blueBright', `${(fastestTime / runs).toPrecision(3)} ms`)
     )
     console.log(
         '🐌',
         styleText(['bold'], 'Worst performance:'),
         styleText('redBright', slowestAlg),
         'at',
-        styleText('redBright', `${slowestTime.toPrecision(3)} ms`)
+        styleText('redBright', `${(slowestTime / runs).toPrecision(3)} ms`)
     )
     console.groupEnd()
 }
